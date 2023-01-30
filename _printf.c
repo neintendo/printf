@@ -1,50 +1,61 @@
+/*
+ * File: _printf.c
+ * Author: Alfredo Kambasha
+ */
+
 #include "main.h"
-#include <limits.h>
-#include <stdio.h>
+#include <stdarg.h>
+#include <stdlib.h>
 
 /**
- * _printf - produces output according to a format like standard printf
- * @format: format string containing the characters and the specifiers
- * Description: this function will call the get_print() function that will
- * determine which printing function to call depending on the conversion
- * specifiers contained into fmt
- * Return: length of the formatted output string
+ * _printf - produces output according to a format.
+ * @format: the character string to print.
+ *
+ * Return: returns 0 on success.
  */
 int _printf(const char *format, ...)
 {
-	int (*pfunc)(va_list, flags_t *);
-	const char *p;
+	int len = 0; /* length of the current argument*/
 	va_list args;
-	flags_t flags = {0, 0, 0};
 
-	register int count = 0;
-
+	if (format == NULL)
+		return (-1);
 	va_start(args, format);
-	if (!format || (format[0] == '%' && !format[1]))
-		return (-1);
-	if (format[0] == '%' && format[1] == ' ' && !format[2])
-		return (-1);
-	for (p = format; *p; p++)
-	{
-		if (*p == '%')
-		{
-			p++;
-			if (*p == '%')
-			{
-				count += _putchar('%');
-				continue;
-			}
-			while (get_flag(*p, &flags))
-				p++;
-			pfunc = get_print(*p);
-			count += (pfunc)
-				? pfunc(args, &flags)
-				: _printf("%%%c", *p);
-		} else
-			count += _putchar(*p);
-	}
-	_putchar(-1);
-	va_end(args);
-	return (count);
 
+	while (*format != '\0')
+	{
+		while (*format != '%' && *format != '\0')
+		{
+			_putchar(*format);
+			len++;
+			format++;
+		}
+		while (*format == '%' && *format != '\0')
+		{
+			format++;
+			switch (*format)
+			{
+			case 'd': case 'i':
+				len += handle_integer((va_arg(args, int)), len);
+				format++;
+				break;
+			case 'c':
+				len += handle_char((va_arg(args, int)), len);
+				format++;
+				break;
+
+			case 's':
+				len += handle_string((va_arg(args, char *)), len);
+				format++;
+				break;
+
+			case '%':
+				len++;
+				len = handle_percent(len);
+				format++;
+				break;
+			}
+		}
+	}
+	return (len);
 }
